@@ -37,12 +37,18 @@ async def lifespan(_app: FastAPI):
             logger.warning("DIAGNOSTIK [%s] %s: %s | Perbaikan: %s", c["status"], c["title"], c["detail"], c["fix"])
     logger.info("Diagnostik startup: %s (platform: %s)", report["overall"], report["platform"])
     if settings.checker_enabled:
-        # Apply the configured interval (CHECKER_INTERVAL_SECONDS) to the
-        # module-level singleton before starting it.
-        checker.interval = max(
-            int(settings.checker_interval_seconds), checker.MIN_INTERVAL_SECONDS
-        )
-        checker.start()
+        # Kegagalan pengecek harga tidak boleh menjatuhkan seluruh server
+        # (Railway akan crash-loop). Catat error-nya; API tetap melayani.
+        try:
+            # Apply the configured interval (CHECKER_INTERVAL_SECONDS) to the
+            # module-level singleton before starting it.
+            checker.interval = max(
+                int(settings.checker_interval_seconds), checker.MIN_INTERVAL_SECONDS
+            )
+            checker.start()
+        except Exception as exc:
+            logger.exception("Pengecek harga gagal start; API tetap berjalan")
+            errorlog.record("checker_start", f"{type(exc).__name__}: {exc}")
     yield
     checker.stop()
 

@@ -18,8 +18,12 @@ MIN_INTERVAL_SECONDS = 60  # never poll faster than once a minute
 
 
 class PriceChecker:
+    # Diekspos juga sebagai atribut kelas agar `checker.MIN_INTERVAL_SECONDS`
+    # (dipakai app/main.py saat startup) valid.
+    MIN_INTERVAL_SECONDS = MIN_INTERVAL_SECONDS
+
     def __init__(self, interval_seconds: int = DEFAULT_INTERVAL_SECONDS):
-        self.interval = max(int(interval_seconds), MIN_INTERVAL_SECONDS)
+        self.interval = max(int(interval_seconds), self.MIN_INTERVAL_SECONDS)
         self._consecutive_failures = 0
         self._stop = threading.Event()
         self._thread = None

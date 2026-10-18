@@ -122,3 +122,34 @@ def test_dashboard_static_is_public_with_api_key(client, monkeypatch):
     r = client.get("/dashboard/", follow_redirects=True)
     assert r.status_code == 200 and "PriceDrop" in r.text
     assert client.get("/api/products").status_code == 401
+
+
+def test_startup_with_checker_enabled(monkeypatch):
+    """Regresi: Railway menjalankan CHECKER_ENABLED=true; startup tidak boleh crash.
+
+    (Tes lain memakai CHECKER_ENABLED=false sehingga bug
+    `checker.MIN_INTERVAL_SECONDS` tidak pernah tersentuh.)
+    """
+    from app.services.checker import PriceChecker, checker
+
+    monkeypatch.setattr(settings, "checker_enabled", True)
+    monkeypatch.setattr(settings, "checker_interval_seconds", 5)  # di bawah minimum
+    monkeypatch.setattr(checker, "check_all", lambda: 0)  # jangan fetch jaringan
+    with TestClient(app) as c:
+        assert c.get("/health").json()["status"] == "ok"
+        assert checker.interval == PriceChecker.MIN_INTERVAL_SECONDS  # dibatasi ke minimum
+    assert checker._thread is None or not checker._thread.is_alive()
+
+
+def test_checker_failure_does_not_crash_server(monkeypatch):
+    from app.services.checker import checker
+
+    def broken():
+        raise RuntimeError("checker rusak")
+
+    monkeypatch.setattr(settings, "checker_enabled", True)
+    monkeypatch.setattr(checker, "start", broken)
+    with TestClient(app) as c:
+        assert c.get("/health").json()["status"] == "ok"  # server tetap hidup
+        report = c.get("/api/diagnostics").json()
+    assert any("checker rusak" in e["message"] for e in report["recent_errors"])
