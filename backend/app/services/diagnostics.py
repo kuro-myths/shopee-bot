@@ -89,14 +89,20 @@ def run_checks() -> dict:
     else:
         checks.append(_check("telegram", "Alert Telegram", "ok", "Token dan chat id terisi dengan format valid."))
 
-    shopee = [settings.shopee_app_id, settings.shopee_app_secret, settings.shopee_partner_id]
+    shopee = [settings.shopee_app_id, settings.shopee_app_secret]
     if any(shopee) and not all(shopee):
-        checks.append(_check("affiliate", "Affiliate Shopee", "warn", "Kredensial Shopee terisi sebagian; link affiliate akan jatuh ke URL asli.",
-                             "Lengkapi SHOPEE_APP_ID, SHOPEE_APP_SECRET, dan SHOPEE_PARTNER_ID."))
+        checks.append(_check("affiliate", "Affiliate Shopee", "warn", "Kredensial Shopee terisi sebagian; link/pencarian affiliate tidak aktif.",
+                             "Lengkapi SHOPEE_APP_ID dan SHOPEE_APP_SECRET (dari panel Open API portal affiliate Shopee)."))
     elif all(shopee):
-        checks.append(_check("affiliate", "Affiliate Shopee", "ok", "Kredensial Shopee lengkap."))
+        checks.append(_check("affiliate", "Affiliate Shopee", "ok", "App ID dan Secret terisi."))
     else:
-        checks.append(_check("affiliate", "Affiliate Shopee", "info", "Belum dikonfigurasi (opsional)."))
+        checks.append(_check("affiliate", "Affiliate Shopee", "info", "Belum dikonfigurasi (opsional; gratis setelah akun affiliate disetujui)."))
+
+    if settings.piloterr_api_key:
+        checks.append(_check("piloterr", "Piloterr (promo web)", "ok",
+                             f"API key terisi; batas {settings.piloterr_daily_limit} panggilan/hari untuk menjaga kredit gratis."))
+    else:
+        checks.append(_check("piloterr", "Piloterr (promo web)", "info", "PILOTERR_API_KEY kosong; sumber promo web nonaktif."))
 
     if settings.checker_enabled:
         checks.append(_check("checker", "Pengecek harga", "ok", f"Aktif, interval {settings.checker_interval_seconds}s."))

@@ -236,6 +236,73 @@ async function loadServerInfo() {
   }
 }
 
+const SRC_LABEL = { tracked: 'Dipantau', affiliate: 'Affiliate', web: 'Web' };
+
+function safeUrl(u) {
+  // hanya http(s): cegah javascript:/data: dari hasil web
+  return /^https?:\/\//i.test(u || '') ? u : '';
+}
+
+function renderPromos(data) {
+  const st = Object.entries(data.sources || {}).map(([k, v]) => {
+    const label = SRC_LABEL[k] || k;
+    if (v.status === 'ok') return `${label}: ${v.count} hasil${v.cached ? ' (cache)' : ''}`;
+    return `${label}: ${v.status === 'skipped' ? 'dilewati' : 'error'} - ${v.message}`;
+  });
+  $('#promo-sources').innerHTML = st.map(esc).join('<br>');
+  const box = $('#promo-results');
+  if (!data.results.length) {
+    box.innerHTML = '<div class="settings-card muted">Belum ada promo yang cocok. Coba kata kunci lain, atau pantau lebih banyak produk lewat ekstensi.</div>';
+    return;
+  }
+  box.innerHTML = data.results.map((d) => {
+    const url = safeUrl(d.url);
+    const img = safeUrl(d.image);
+    return `<div class="promo-card">
+      ${img ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+      <div class="promo-body">
+        <div class="promo-title">${esc(d.title)}</div>
+        <div class="promo-meta">
+          <span class="promo-src-badge">${esc(SRC_LABEL[d.source] || d.source)}</span>
+          ${d.price ? `<span class="promo-price">${esc(fmtRp(d.price))}</span>` : ''}
+          ${d.original_price ? `<s>${esc(fmtRp(d.original_price))}</s>` : ''}
+          ${d.discount_pct != null ? `<span class="promo-off">-${esc(Math.round(d.discount_pct))}%</span>` : ''}
+          ${d.commission_pct != null ? `<span>komisi ${esc(d.commission_pct)}%</span>` : ''}
+          ${d.shop ? `<span>${esc(d.shop)}</span>` : ''}
+        </div>
+        ${d.note ? `<div class="promo-note">${esc(d.note)}</div>` : ''}
+      </div>
+      ${url ? `<a class="btn promo-open" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Buka</a>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function loadPromos() {
+  const sources = [...document.querySelectorAll('.promo-src:checked')].map((c) => c.value);
+  $('#promo-results').innerHTML = '<div class="settings-card muted">Mencari...</div>';
+  try {
+    renderPromos(await API.promos($('#promo-q').value.trim(), sources));
+  } catch (e) {
+    $('#promo-results').innerHTML = '';
+    handleApiError(e);
+  }
+}
+
+$('#promo-go').addEventListener('click', loadPromos);
+$('#promo-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadPromos(); });
+$('#promo-credit').addEventListener('click', async () => {
+  const out = $('#promo-credit-out');
+  out.textContent = 'Memeriksa...';
+  try {
+    const s = await API.promoStatus(true);
+    const w = s.web;
+    if (!w.configured) { out.textContent = 'PILOTERR_API_KEY belum diisi di server.'; return; }
+    out.textContent = w.usage_error
+      ? w.usage_error
+      : `Pemakaian hari ini: ${w.spent_today}/${w.daily_limit}. Akun: ${JSON.stringify(w.usage).slice(0, 160)}`;
+  } catch (e) { out.textContent = explainError(e)[0]; }
+});
+
 const ICON = { ok: 'OK', info: 'INFO', warn: 'PERHATIAN', error: 'ERROR' };
 
 async function loadDiagnostics() {
@@ -267,6 +334,7 @@ function switchView(name) {
     v.classList.toggle('active', v.id === `view-${name}`);
   });
   if (name === 'settings') { loadServerInfo(); loadDiagnostics(); }
+  if (name === 'promo' && !$('#promo-results').children.length) loadPromos();
   if (name === 'history' && !state.selected) {
     // auto-show first product history
     if (state.products.length) showHistory(state.products[0].id);

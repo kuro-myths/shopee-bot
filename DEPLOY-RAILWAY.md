@@ -56,3 +56,16 @@ manual: tab **Actions -> Deploy to Railway -> Run workflow**.
 Cek lokal terhadap server mana pun:
 
     python scripts/check_deploy.py --url https://<domain> --api-key <API_KEY>
+
+## Fitur Promo & API key opsional
+
+Tab **Promo** di dashboard menggabungkan tiga sumber. Hanya sumber yang kuncinya diisi yang aktif:
+
+| Sumber | Variable di Railway | Biaya |
+|---|---|---|
+| Produk dipantau | (tidak perlu) | Gratis, selalu aktif |
+| Shopee Affiliate (diskon + komisi + link affiliate) | `SHOPEE_APP_ID`, `SHOPEE_APP_SECRET` | Gratis setelah akun affiliate disetujui |
+| Web (promo/voucher dari pencarian Google via Piloterr) | `PILOTERR_API_KEY`, opsional `PILOTERR_DAILY_LIMIT` (default 10) | Kredit gratis terbatas (50 sekali pakai) |
+
+Hasil pencarian di-cache 30 menit (`PROMO_CACHE_SECONDS`) untuk menghemat kredit/kuota.
+**Jangan pernah menaruh API key di repo atau chat**; isi hanya lewat Railway -> Variables.

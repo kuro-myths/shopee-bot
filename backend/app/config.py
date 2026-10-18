@@ -15,6 +15,13 @@ class Settings:
     shopee_app_secret: str = field(default_factory=lambda: os.getenv("SHOPEE_APP_SECRET", ""))
     shopee_partner_id: str = field(default_factory=lambda: os.getenv("SHOPEE_PARTNER_ID", ""))
 
+    # Piloterr (web data API) - dipakai pencarian promo web. Jangan di-commit!
+    piloterr_api_key: str = field(default_factory=lambda: os.getenv("PILOTERR_API_KEY", ""))
+    # Batas panggilan Piloterr per hari (melindungi kredit gratis yang terbatas)
+    piloterr_daily_limit: int = field(default_factory=lambda: int(os.getenv("PILOTERR_DAILY_LIMIT", "10")))
+    # Cache hasil pencarian promo (detik) agar tidak boros kredit/kuota
+    promo_cache_seconds: int = field(default_factory=lambda: int(os.getenv("PROMO_CACHE_SECONDS", "1800")))
+
     # TikTok Shop Affiliate API
     tiktok_app_key: str = field(default_factory=lambda: os.getenv("TIKTOK_APP_KEY", ""))
     tiktok_app_secret: str = field(default_factory=lambda: os.getenv("TIKTOK_APP_SECRET", ""))

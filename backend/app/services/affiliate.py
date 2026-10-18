@@ -24,7 +24,7 @@ from ..config import settings
 # --------------------------------------------------------------------------
 
 
-def _shopee_sign(partner_id, path, timestamp):
+def _shopee_sign(partner_id, path, timestamp):  # legacy; tidak dipakai lagi oleh shopee_shorten
     base = f"{partner_id}{path}{timestamp}"
     return hmac.new(
         settings.shopee_app_secret.encode(), base.encode(), hashlib.sha256
@@ -32,34 +32,16 @@ def _shopee_sign(partner_id, path, timestamp):
 
 
 def shopee_shorten(product_url: str):
-    """Shorten a product URL through the Shopee AMS Open API.
+    """Link affiliate Shopee lewat Affiliate Open API (GraphQL generateShortLink).
 
-    Returns the affiliate URL or None on failure/missing config.
+    Hanya butuh SHOPEE_APP_ID + SHOPEE_APP_SECRET. Mengembalikan None jika gagal
+    atau kredensial belum diisi.
     """
-    if not (settings.shopee_app_id and settings.shopee_app_secret and settings.shopee_partner_id):
-        return None
+    from . import shopee_graphql
 
-    path = "/api/v2/shortlink/generate"
-    timestamp = int(time.time())
-    sign = _shopee_sign(settings.shopee_partner_id, path, timestamp)
-
-    url = (
-        "https://open-api.affiliate.shopee.co.id"
-        f"{path}?partner_id={settings.shopee_partner_id}"
-        f"&timestamp={timestamp}&sign={sign}&app_id={settings.shopee_app_id}"
-    )
-    body = json.dumps({"raw_url": product_url}).encode()
-    req = urllib.request.Request(
-        url, data=body, headers={"Content-Type": "application/json"}
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode())
-            # response envelope: {"data": {"short_url": "..."}, "status": 200}
-            short = (data.get("data") or {}).get("short_url")
-            return short if short else None
-    except Exception:
+    if not shopee_graphql.configured():
         return None
+    return shopee_graphql.shorten(product_url)
 
 
 # --------------------------------------------------------------------------

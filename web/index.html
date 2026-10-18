@@ -26,6 +26,7 @@
         <button class="nav-btn active" data-view="overview">Ringkasan</button>
         <button class="nav-btn" data-view="products">Produk</button>
         <button class="nav-btn" data-view="history">Riwayat</button>
+        <button class="nav-btn" data-view="promo">Promo</button>
         <button class="nav-btn" data-view="settings">Pengaturan</button>
       </nav>
       <div class="sidebar-foot">
@@ -72,6 +73,25 @@
       <div id="view-history" class="view">
         <div id="chart"></div>
         <p class="muted" id="chart-empty">Pilih produk di tabel Ringkasan untuk melihat grafik harga.</p>
+      </div>
+
+      <div id="view-promo" class="view">
+        <div class="settings-card">
+          <h2>Cari diskon &amp; promo</h2>
+          <div class="toolbar-row">
+            <input id="promo-q" type="search" placeholder="Kata kunci, mis. earbuds, sepatu lari (kosong = promo dari produk yang Anda pantau)" />
+            <button id="promo-go" class="btn">Cari</button>
+          </div>
+          <div class="promo-filters">
+            <label><input type="checkbox" class="promo-src" value="tracked" checked /> Produk dipantau</label>
+            <label><input type="checkbox" class="promo-src" value="affiliate" checked /> Shopee Affiliate</label>
+            <label><input type="checkbox" class="promo-src" value="web" checked /> Web (Piloterr)</label>
+          </div>
+          <div id="promo-sources" class="muted"></div>
+          <button id="promo-credit" class="btn ghost">Cek sisa kredit Piloterr</button>
+          <span id="promo-credit-out" class="muted"></span>
+        </div>
+        <div id="promo-results"></div>
       </div>
 
       <div id="view-settings" class="view">

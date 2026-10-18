@@ -42,6 +42,13 @@ const API = {
 
   diagnostics() { return this.request('/api/diagnostics'); },
 
+  promos(q, sources) {
+    const p = new URLSearchParams({ q: q || '', sources: (sources || []).join(',') });
+    return this.request(`/api/promos?${p}`);
+  },
+
+  promoStatus(usage) { return this.request(`/api/promos/status${usage ? '?usage=true' : ''}`); },
+
   health() { return this.request('/health'); },
 
   products(params = {}) {

@@ -15,7 +15,7 @@ from .db import init_db
 from .logging_config import configure_logging
 from .middleware.logging import RequestLoggingMiddleware
 from .middleware.security import SecurityMiddleware
-from .routers import products, stats
+from .routers import products, promos, stats
 from .services import errorlog
 from .services.checker import checker
 from .services.diagnostics import run_checks
@@ -132,6 +132,7 @@ def diagnostics():
 
 app.include_router(products.router)
 app.include_router(stats.router)
+app.include_router(promos.router)
 
 # Web dashboard (served at /dashboard)
 def find_dashboard_dir():

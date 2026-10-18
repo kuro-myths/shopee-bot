@@ -139,3 +139,19 @@ body.light .table tr:hover { background: var(--panel-2); }
 .diag-badge.error { background: rgba(244,63,94,.15); color: #fb7185; }
 .diag-fix { margin-top: 4px; font-size: 13px; color: #94a3b8; }
 .settings-card h3 { margin: 14px 0 6px; font-size: 14px; }
+
+/* --- promo --- */
+.promo-filters { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0; font-size: 14px; }
+.promo-filters label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.promo-card { display: flex; gap: 12px; padding: 12px; margin-top: 10px; border-radius: 12px;
+  background: rgba(30,41,59,.6); border: 1px solid rgba(148,163,184,.18); }
+.promo-card img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; background: #0f172a; }
+.promo-body { min-width: 0; flex: 1; }
+.promo-title { font-weight: 600; margin-bottom: 4px; overflow-wrap: anywhere; }
+.promo-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; color: #94a3b8; }
+.promo-price { color: #34d399; font-weight: 700; }
+.promo-off { background: rgba(244,63,94,.15); color: #fb7185; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+.promo-src-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(56,189,248,.15); color: #7dd3fc; text-transform: uppercase; }
+.promo-note { font-size: 13px; color: #94a3b8; margin-top: 4px; overflow-wrap: anywhere; }
+.promo-open { align-self: center; white-space: nowrap; }
+.promo-open { text-decoration: none; }
