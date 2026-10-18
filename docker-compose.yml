@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/pricedrop.db
+      - CHECKER_ENABLED=true
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - API_KEY=${API_KEY:-}
+      - CHECKER_INTERVAL_SECONDS=${CHECKER_INTERVAL_SECONDS:-21600}
+      - DROP_THRESHOLD_PCT=${DROP_THRESHOLD_PCT:-5}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-text}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - NOTIFY_RETRIES=${NOTIFY_RETRIES:-3}
+      - NOTIFY_BACKOFF=${NOTIFY_BACKOFF:-0.5}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

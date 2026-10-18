@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-dev.txt
+      - name: Run tests
+        run: |
+          cd backend
+          python -m pytest tests/ --cov=app --cov-report=term-missing --cov-fail-under=60
+        env:
+          CHECKER_ENABLED: "false"
+
+  bot-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run bot tests
+        run: |
+          cd bot
+          pip install pytest requests
+          python -m pytest test_commands.py test_state.py -q

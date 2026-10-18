@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "PriceDrop Tracker — Shopee & TikTok Shop",
+  "version": "1.1.0",
+  "description": "Track product prices on Shopee & TikTok Shop, get notified on price drops, and generate affiliate links.",
+  "permissions": ["storage", "notifications", "alarms"],
+  "host_permissions": [
+    "https://shopee.co.id/*",
+    "https://www.tiktok.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "PriceDrop Tracker",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "popup/settings.html",
+  "minimum_chrome_version": "102",
+  "content_scripts": [
+    {
+      "matches": ["https://shopee.co.id/*"],
+      "js": ["content/shopee.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.tiktok.com/*"],
+      "js": ["content/tiktok.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="popup.css" />
+  <title>PriceDrop Tracker</title>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <h1>PriceDrop Tracker</h1>
+    </div>
+    <span id="backend-status" class="status-chip" title="Backend status">…</span>
+  </header>
+
+  <section class="toolbar">
+    <select id="market-filter" title="Filter marketplace">
+      <option value="">Semua</option>
+      <option value="shopee">Shopee</option>
+      <option value="tiktok">TikTok</option>
+    </select>
+    <select id="sort-select" title="Urutkan">
+      <option value="updated">Terbaru</option>
+      <option value="price">Harga tertinggi</option>
+      <option value="price_asc">Harga terendah</option>
+      <option value="drop">Diskon terbesar</option>
+    </select>
+    <input id="search-input" type="search" placeholder="Cari produk…" />
+    <button id="theme-btn" class="theme-btn" title="Ganti tema">☾</button>
+    <button id="settings-btn" class="icon-btn" title="Pengaturan">⚙</button>
+  </section>
+
+  <section id="products" class="products">
+    <div id="empty" class="empty hidden">
+      <p class="empty-title">Belum ada produk yang di-track</p>
+      <p class="empty-sub">Buka halaman produk di Shopee atau TikTok Shop, lalu klik tombol "Track price".</p>
+    </div>
+    <div id="error" class="error hidden">
+      <p id="error-text"></p>
+      <button id="retry-btn" class="retry-btn">Coba lagi</button>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <footer class="app-footer">
+    <button id="refresh-btn" class="ghost-btn">↻ Refresh</button>
+    <button id="export-btn" class="ghost-btn">Export</button>
+    <button id="open-backend" class="ghost-btn">Backend</button>
+  </footer>
+
+  <dialog id="target-dialog">
+    <form method="dialog" class="target-form">
+      <h2>Set target harga</h2>
+      <p class="target-hint">Dapatkan notifikasi saat harga turun sampai targetmu.</p>
+      <input id="target-input" type="number" min="1" step="1000" placeholder="Rp 50.000" />
+      <input type="hidden" id="target-product-id" />
+      <div class="target-actions">
+        <button value="cancel" class="mini-btn">Batal</button>
+        <button value="ok" class="mini-btn primary" id="target-save">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="onboarding" class="onboarding hidden">
+    <h2>Selamat datang!</h2>
+    <p>PriceDrop Tracker memantau harga di Shopee dan TikTok Shop.
+       Pertama, pastikan backend sudah berjalan di <code>localhost:8000</code>.
+       Lalu buka halaman produk dan klik tombol <b>Track price</b>.</p>
+    <button id="onboarding-ok" class="primary-btn">Mengerti</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

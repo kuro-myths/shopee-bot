@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PriceDrop Tracker — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>PriceDrop Tracker</h1>
+    </div>
+    <div class="topbar-actions">
+      <span id="status" class="status">Memeriksa…</span>
+      <button id="theme-toggle" class="btn ghost">Tema</button>
+      <button id="export-btn" class="btn ghost">Export CSV</button>
+      <button id="refresh" class="btn">Refresh</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <nav>
+        <button class="nav-btn active" data-view="overview">Ringkasan</button>
+        <button class="nav-btn" data-view="products">Produk</button>
+        <button class="nav-btn" data-view="history">Riwayat</button>
+        <button class="nav-btn" data-view="settings">Pengaturan</button>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/docs" target="_blank" class="muted">API Docs</a>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div id="view-overview" class="view active">
+        <div class="stats-grid" id="stats-grid"></div>
+      </div>
+
+      <div id="view-products" class="view">
+        <div class="toolbar-row">
+          <input id="search" type="search" placeholder="Cari produk…" />
+          <select id="filter-market">
+            <option value="">Semua marketplace</option>
+            <option value="shopee">Shopee</option>
+            <option value="tiktok">TikTok Shop</option>
+          </select>
+          <label class="archived-toggle">
+            <input type="checkbox" id="show-archived" />
+            Tampilkan arsip
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Market</th>
+                <th>Harga</th>
+                <th>Minimum</th>
+                <th>Target</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-history" class="view">
+        <div id="chart"></div>
+        <p class="muted" id="chart-empty">Pilih produk di tabel Ringkasan untuk melihat grafik harga.</p>
+      </div>
+
+      <div id="view-settings" class="view">
+        <div class="settings-card">
+          <h2>Informasi server</h2>
+          <dl id="server-info"></dl>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

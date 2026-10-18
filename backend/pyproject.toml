@@ -1,0 +1,29 @@
+[project]
+name = "pricedrop-tracker-backend"
+version = "0.2.0"
+description = "Track product prices on Shopee and TikTok Shop, detect drops, generate affiliate links."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "pytest-cov>=4.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --disable-warnings"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/main.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

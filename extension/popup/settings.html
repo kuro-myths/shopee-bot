@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pengaturan PriceDrop Tracker</title>
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #1e293b; --panel-2: #273449; --border: #334155;
+      --text: #f1f5f9; --muted: #94a3b8; --blue: #38bdf8; --green: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 560px; margin: 0 auto; padding: 32px 20px;
+    }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    p.sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+    .field { margin-bottom: 20px; }
+    label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      background: var(--panel); border: 1px solid var(--border);
+      color: var(--text); font-size: 14px;
+    }
+    input:focus { outline: none; border-color: var(--blue); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .save-btn {
+      margin-top: 8px; padding: 10px 22px; border: none; border-radius: 8px;
+      background: var(--blue); color: #062033; font-weight: 800; font-size: 14px; cursor: pointer;
+    }
+    .save-btn:hover { filter: brightness(1.1); }
+    .save-btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); font-weight: 600; }
+    .save-btn:disabled { opacity: .6; cursor: wait; }
+    .status { margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--green); min-height: 18px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .row input[type="number"] { max-width: 160px; }
+  </style>
+</head>
+<body>
+  <h1>Pengaturan</h1>
+  <p class="sub">Konfigurasi PriceDrop Tracker.</p>
+
+  <div class="field">
+    <label for="backend-url">URL backend</label>
+    <input type="text" id="backend-url" placeholder="http://localhost:8000" />
+    <p class="hint">Alamat server PriceDrop Tracker API. Default: http://localhost:8000</p>
+  </div>
+
+  <div class="field">
+    <label for="api-key">API key (opsional)</label>
+    <input type="text" id="api-key" placeholder="kosongkan jika tidak dipakai" />
+    <p class="hint">Dikirim sebagai header X-API-Key jika backend mengaktifkan proteksi.</p>
+  </div>
+
+  <div class="field">
+    <label for="alert-threshold">Ambang notifikasi harga turun (%)</label>
+    <input type="number" id="alert-threshold" min="1" step="1" value="5" />
+    <p class="hint">Persentase penurunan dari harga terendah sebelum notifikasi dikirim.</p>
+  </div>
+
+  <div class="field">
+    <label for="open-product">Buka halaman produk saat klik kartu</label>
+    <div class="row">
+      <input type="checkbox" id="open-product" checked />
+      <span class="hint">Membuka tautan produk di tab baru ketika nama produk diklik.</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="save-btn" id="save">Simpan pengaturan</button>
+    <button class="save-btn ghost" id="test-conn">Tes koneksi</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
