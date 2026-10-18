@@ -4,7 +4,9 @@
 'use strict';
 
 const API = {
-  base: 'http://localhost:8000',
+  // Dashboard disajikan oleh backend yang sama (/dashboard), jadi pakai origin yang sama.
+  // Jika file dibuka langsung dari disk (file://), fallback ke localhost.
+  base: window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:8000',
 
   async request(path, options = {}) {
     const res = await fetch(`${this.base}${path}`, {
