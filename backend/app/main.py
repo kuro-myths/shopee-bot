@@ -6,7 +6,7 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
@@ -80,8 +80,11 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-def root():
+@app.get("/", include_in_schema=False)
+def root(request: Request):
+    # Browser (Accept: text/html) -> dashboard; klien API tetap mendapat JSON.
+    if "text/html" in request.headers.get("accept", ""):
+        return RedirectResponse("/dashboard/", status_code=307)
     return {
         "app": "PriceDrop Tracker API",
         "version": __version__,

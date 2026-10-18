@@ -153,3 +153,17 @@ def test_checker_failure_does_not_crash_server(monkeypatch):
         assert c.get("/health").json()["status"] == "ok"  # server tetap hidup
         report = c.get("/api/diagnostics").json()
     assert any("checker rusak" in e["message"] for e in report["recent_errors"])
+
+
+def test_root_redirects_browser_to_dashboard(client, monkeypatch):
+    r = client.get("/", headers={"Accept": "text/html,application/xhtml+xml"}, follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/dashboard/"
+    # klien API tetap mendapat JSON
+    j = client.get("/", headers={"Accept": "application/json"})
+    assert j.status_code == 200 and j.json()["app"] == "PriceDrop Tracker API"
+    # tetap bisa dibuka (tanpa 401) walau API_KEY diaktifkan
+    monkeypatch.setattr(settings, "api_key", "rahasia")
+    r2 = client.get("/", headers={"Accept": "text/html"}, follow_redirects=False)
+    assert r2.status_code == 307
+    page = client.get("/", headers={"Accept": "text/html"}, follow_redirects=True)
+    assert page.status_code == 200 and "PriceDrop" in page.text
