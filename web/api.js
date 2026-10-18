@@ -8,14 +8,39 @@ const API = {
   // Jika file dibuka langsung dari disk (file://), fallback ke localhost.
   base: window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:8000',
 
+  getKey() {
+    try { return localStorage.getItem('pdt-api-key') || ''; } catch (_e) { return ''; }
+  },
+
+  setKey(key) {
+    try {
+      if (key) localStorage.setItem('pdt-api-key', key);
+      else localStorage.removeItem('pdt-api-key');
+    } catch (_e) { /* storage diblokir: abaikan */ }
+  },
+
   async request(path, options = {}) {
-    const res = await fetch(`${this.base}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-      ...options,
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    const key = this.getKey();
+    if (key) headers['X-API-Key'] = key;
+    let res;
+    try {
+      res = await fetch(`${this.base}${path}`, { ...options, headers });
+    } catch (e) {
+      const err = new Error('Tidak bisa terhubung ke server');
+      err.kind = 'network';
+      throw err;
+    }
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}`);
+      err.kind = res.status === 401 ? 'auth' : res.status === 429 ? 'rate' : 'http';
+      err.status = res.status;
+      throw err;
+    }
     return res.json();
   },
+
+  diagnostics() { return this.request('/api/diagnostics'); },
 
   health() { return this.request('/health'); },
 
@@ -34,6 +59,8 @@ const API = {
   history(id) { return this.request(`/api/products/${id}/history`); },
 
   exportCsv() {
-    window.open(`${this.base}/api/products/export/csv`, '_blank');
+    const key = this.getKey();
+    const q = key ? `?token=${encodeURIComponent(key)}` : '';
+    window.open(`${this.base}/api/products/export/csv${q}`, '_blank');
   },
 };

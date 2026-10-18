@@ -11,18 +11,47 @@ function fmtRp(n) {
   return n == null ? '—' : 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
 
-function setStatus(ok) {
+function esc(t) {
+  return String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function setStatus(ok, label) {
   const el = $('#status');
-  el.textContent = ok ? 'Online' : 'Offline';
+  el.textContent = label || (ok ? 'Online' : 'Offline');
   el.className = 'status ' + (ok ? 'ok' : 'err');
+}
+
+function showBanner(msg, level) {
+  const el = $('#banner');
+  if (!msg) { el.hidden = true; return; }
+  el.textContent = msg;
+  el.className = 'banner' + (level === 'warn' ? ' warn' : '');
+  el.hidden = false;
+}
+
+// Terjemahkan error API menjadi pesan yang bisa ditindaklanjuti.
+function explainError(e) {
+  if (e && e.kind === 'auth') return ['Server meminta API key. Buka Pengaturan, masukkan API key yang sama dengan variable API_KEY di Railway.', 'Perlu API key'];
+  if (e && e.kind === 'rate') return ['Terlalu banyak permintaan (rate limit). Tunggu sebentar lalu klik Refresh.', 'Dibatasi'];
+  if (e && e.kind === 'network') return ['Tidak bisa terhubung ke server. Cek status deployment di Railway (Deployments -> View logs) dan pastikan domain benar.', 'Offline'];
+  return [`Server mengembalikan error (${e && e.message ? e.message : 'tidak diketahui'}). Lihat panel Diagnostik di Pengaturan atau log Railway.`, 'Error'];
+}
+
+function handleApiError(e) {
+  const [msg, label] = explainError(e);
+  setStatus(false, label);
+  showBanner(msg);
 }
 
 async function loadHealth() {
   try {
     await API.health();
     setStatus(true);
-  } catch (_e) {
-    setStatus(false);
+    // /health publik; cek akses API sebenarnya (mendeteksi API key salah).
+    await API.products({ page_size: 1 });
+    showBanner('');
+  } catch (e) {
+    handleApiError(e);
   }
 }
 
@@ -38,8 +67,8 @@ async function loadProducts() {
     state.products = data.products || [];
     renderOverview();
     renderTable();
-  } catch (_e) {
-    // backend offline — clear
+  } catch (e) {
+    handleApiError(e);
     state.products = [];
     renderOverview();
     renderTable();
@@ -202,8 +231,31 @@ async function loadServerInfo() {
       <dt>Uptime</dt><dd>${Math.round(h.uptime_seconds / 60)} menit</dd>
       <dt>Total produk</dt><dd>${data.total}</dd>
     `;
-  } catch (_e) {
-    $('#server-info').innerHTML = '<dt>Status</dt><dd class="muted">Backend offline</dd>';
+  } catch (e) {
+    $('#server-info').innerHTML = `<dt>Status</dt><dd class="muted">${esc(explainError(e)[1])}</dd>`;
+  }
+}
+
+const ICON = { ok: 'OK', info: 'INFO', warn: 'PERHATIAN', error: 'ERROR' };
+
+async function loadDiagnostics() {
+  const list = $('#diag-list');
+  try {
+    const d = await API.diagnostics();
+    const ov = $('#diag-overall');
+    ov.textContent = d.overall === 'ok' ? 'Sehat' : d.overall === 'warn' ? 'Ada peringatan' : 'Ada error';
+    ov.className = 'status ' + (d.overall === 'ok' ? 'ok' : 'err');
+    list.innerHTML = d.checks.map((c) => `
+      <div class="diag-item">
+        <div class="diag-title"><span class="diag-badge ${esc(c.status)}">${ICON[c.status] || esc(c.status)}</span>${esc(c.title)}</div>
+        <div class="muted">${esc(c.detail)}</div>
+        ${c.fix && (c.status === 'warn' || c.status === 'error') ? `<div class="diag-fix">Perbaikan: ${esc(c.fix)}</div>` : ''}
+      </div>`).join('');
+    $('#diag-errors').innerHTML = d.recent_errors.length
+      ? d.recent_errors.map((e) => `<div>${esc(e.ts)} — ${esc(e.message)}</div>`).join('')
+      : 'Tidak ada.';
+  } catch (e) {
+    list.innerHTML = `<div class="diag-item"><div class="muted">${esc(explainError(e)[0])}</div></div>`;
   }
 }
 
@@ -214,7 +266,7 @@ function switchView(name) {
   document.querySelectorAll('.view').forEach((v) => {
     v.classList.toggle('active', v.id === `view-${name}`);
   });
-  if (name === 'settings') loadServerInfo();
+  if (name === 'settings') { loadServerInfo(); loadDiagnostics(); }
   if (name === 'history' && !state.selected) {
     // auto-show first product history
     if (state.products.length) showHistory(state.products[0].id);
@@ -232,6 +284,16 @@ $('#refresh').addEventListener('click', () => {
 });
 
 $('#export-btn').addEventListener('click', () => API.exportCsv());
+
+$('#api-key').value = API.getKey();
+$('#save-key').addEventListener('click', () => {
+  API.setKey($('#api-key').value.trim());
+  loadHealth();
+  loadProducts();
+  loadServerInfo();
+  loadDiagnostics();
+});
+$('#diag-refresh').addEventListener('click', loadDiagnostics);
 
 $('#theme-toggle').addEventListener('click', () => {
   document.body.classList.toggle('light');

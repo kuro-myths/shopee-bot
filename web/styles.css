@@ -124,3 +124,18 @@ body.light .table tr:hover { background: var(--panel-2); }
 .settings-card dl { display: grid; grid-template-columns: 140px 1fr; gap: 8px 12px; }
 .settings-card dt { color: var(--muted); }
 .settings-card dd { font-weight: 600; }
+
+/* --- diagnostik & banner --- */
+.banner { margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; font-size: 14px;
+  background: rgba(244,63,94,.12); border: 1px solid rgba(244,63,94,.4); color: #fda4af; }
+.banner.warn { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.4); color: #fcd34d; }
+.diag-item { padding: 10px 0; border-bottom: 1px solid rgba(148,163,184,.15); }
+.diag-item:last-child { border-bottom: 0; }
+.diag-title { font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.diag-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; }
+.diag-badge.ok { background: rgba(16,185,129,.15); color: #34d399; }
+.diag-badge.info { background: rgba(56,189,248,.15); color: #7dd3fc; }
+.diag-badge.warn { background: rgba(245,158,11,.15); color: #fbbf24; }
+.diag-badge.error { background: rgba(244,63,94,.15); color: #fb7185; }
+.diag-fix { margin-top: 4px; font-size: 13px; color: #94a3b8; }
+.settings-card h3 { margin: 14px 0 6px; font-size: 14px; }

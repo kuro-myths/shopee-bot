@@ -12,5 +12,6 @@ ENV CHECKER_ENABLED=true \
     PYTHONUNBUFFERED=1
 EXPOSE 8000
 
-# Railway menyuntikkan $PORT; fallback ke 8000 untuk lokal/docker-compose
-CMD ["sh", "-c", "mkdir -p /data && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Railway menyuntikkan $PORT; fallback ke 8000 untuk lokal/docker-compose.
+# --proxy-headers: IP klien asli (bukan IP proxy Railway) dipakai untuk rate limit.
+CMD ["sh", "-c", "mkdir -p /data && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

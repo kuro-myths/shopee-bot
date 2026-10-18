@@ -2,8 +2,11 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
@@ -12,17 +15,27 @@ from .logging_config import configure_logging
 from .middleware.logging import RequestLoggingMiddleware
 from .middleware.security import SecurityMiddleware
 from .routers import products, stats
+from .services import errorlog
 from .services.checker import checker
+from .services.diagnostics import run_checks
 from .services.health import health_status
 from .version import __version__
 
 
 configure_logging()
+logger = logging.getLogger("pricedrop")
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
+    # Log a one-line summary of anything misconfigured so it is visible
+    # in the Railway deploy logs without opening the dashboard.
+    report = run_checks()
+    for c in report["checks"]:
+        if c["status"] in ("warn", "error"):
+            logger.warning("DIAGNOSTIK [%s] %s: %s | Perbaikan: %s", c["status"], c["title"], c["detail"], c["fix"])
+    logger.info("Diagnostik startup: %s (platform: %s)", report["overall"], report["platform"])
     if settings.checker_enabled:
         # Apply the configured interval (CHECKER_INTERVAL_SECONDS) to the
         # module-level singleton before starting it.
@@ -42,6 +55,14 @@ app = FastAPI(
     lifespan=lifespan,
     contact={"name": "PriceDrop Tracker", "url": "https://github.com/daffaroffi/price-drop-tracker"},
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception(request: Request, exc: Exception):
+    """Log + remember unexpected errors so /api/diagnostics can show them."""
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    errorlog.record("unhandled_exception", f"{request.method} {request.url.path}: {type(exc).__name__}: {exc}")
+    return JSONResponse({"detail": "Internal server error"}, status_code=500)
+
 
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(SecurityMiddleware)
@@ -91,6 +112,12 @@ def version():
         "api_version": 1,
         "schema_version": health_status().get("schema_version"),
     }
+
+
+@app.get("/api/diagnostics")
+def diagnostics():
+    """Configuration self-check with suggested fixes (requires API key if set)."""
+    return run_checks()
 
 
 app.include_router(products.router)

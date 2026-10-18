@@ -34,6 +34,7 @@
     </aside>
 
     <section class="content">
+      <div id="banner" class="banner" hidden></div>
       <div id="view-overview" class="view active">
         <div class="stats-grid" id="stats-grid"></div>
       </div>
@@ -75,8 +76,23 @@
 
       <div id="view-settings" class="view">
         <div class="settings-card">
+          <h2>API key</h2>
+          <p class="muted">Diperlukan jika backend memakai variable <code>API_KEY</code>. Disimpan hanya di browser ini.</p>
+          <div class="toolbar-row">
+            <input id="api-key" type="password" placeholder="Masukkan API key" autocomplete="off" />
+            <button id="save-key" class="btn">Simpan</button>
+          </div>
+        </div>
+        <div class="settings-card">
           <h2>Informasi server</h2>
           <dl id="server-info"></dl>
+        </div>
+        <div class="settings-card">
+          <h2>Diagnostik <span id="diag-overall" class="status"></span></h2>
+          <div id="diag-list"></div>
+          <h3>Error terbaru</h3>
+          <div id="diag-errors" class="muted">—</div>
+          <button id="diag-refresh" class="btn ghost">Periksa ulang</button>
         </div>
       </div>
     </section>

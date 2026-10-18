@@ -1,10 +1,39 @@
 """SQLite persistence layer. Uses stdlib sqlite3 — zero extra dependencies."""
+import logging
+import os
 import sqlite3
 from contextlib import contextmanager
 
 from .config import settings
 
-DB_PATH = settings.database_url.replace("sqlite:///", "")
+logger = logging.getLogger("pricedrop.db")
+
+
+def _resolve_db_path(url: str):
+    """Return (path, fallback_reason).
+
+    Creates the parent directory when missing. If the directory cannot be
+    created or written (e.g. a Railway volume is not mounted at /data and
+    the filesystem is read-only), fall back to a local file instead of
+    crashing at startup, and report why so diagnostics can surface it.
+    """
+    path = url.replace("sqlite:///", "")
+    if path == ":memory:":
+        return path, None
+    directory = os.path.dirname(os.path.abspath(path))
+    try:
+        os.makedirs(directory, exist_ok=True)
+        if not os.access(directory, os.W_OK):
+            raise PermissionError(f"direktori tidak bisa ditulis: {directory}")
+        return path, None
+    except OSError as exc:
+        fallback = os.path.join(os.getcwd(), "pricedrop.db")
+        reason = f"{path} tidak bisa dipakai ({exc}); memakai {fallback}"
+        logger.warning(reason)
+        return fallback, reason
+
+
+DB_PATH, DB_FALLBACK_REASON = _resolve_db_path(settings.database_url)
 
 SCHEMA_VERSION = 2
 

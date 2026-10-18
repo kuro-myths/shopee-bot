@@ -44,7 +44,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         # Skip auth/rate-limit for docs and health
         path = request.url.path
         # Metadata endpoints are public; everything else needs auth
-        if path in ("/docs", "/openapi.json", "/health", "/api/version") or path.startswith("/redoc"):
+        # The dashboard's static files are public; its API calls are not.
+        if path in ("/docs", "/openapi.json", "/health", "/api/version") or path.startswith(("/redoc", "/dashboard")):
             return await call_next(request)
 
         if settings.api_key:

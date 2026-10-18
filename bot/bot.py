@@ -22,7 +22,14 @@ import requests
 from commands import cmd_list, cmd_recent, cmd_settings, cmd_start, cmd_stats, cmd_top, fmt_rp, parse_target_arg
 from state import alerts_enabled, set_alerts
 
-API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+API_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+API_KEY = os.getenv("API_KEY", "")
+
+# Session khusus backend: membawa X-API-Key. Panggilan ke Telegram memakai
+# requests biasa agar API key tidak pernah ikut terkirim ke pihak lain.
+api = requests.Session()
+if API_KEY:
+    api.headers["X-API-Key"] = API_KEY
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 if not TOKEN:
@@ -46,15 +53,17 @@ def backend(path, method="GET", payload=None):
     url = f"{API_URL}{path}"
     try:
         if method == "POST":
-            r = requests.post(url, json=payload, timeout=15)
+            r = api.post(url, json=payload, timeout=15)
         elif method == "PUT":
-            r = requests.put(url, json=payload, timeout=15)
+            r = api.put(url, json=payload, timeout=15)
         elif method == "DELETE":
-            r = requests.delete(url, timeout=15)
+            r = api.delete(url, timeout=15)
         else:
-            r = requests.get(url, timeout=15)
+            r = api.get(url, timeout=15)
         if r.status_code == 200:
             return r.json()
+        if r.status_code == 401:
+            print("Backend menolak: API_KEY salah/kosong. Set variable API_KEY di service bot sama dengan di backend.")
         print("Backend error:", r.status_code, r.text[:200])
     except Exception as e:
         print("Backend unreachable:", e)
@@ -188,7 +197,7 @@ def handle_message(chat_id, text):
             return "Contoh: /restore 3"
         product_id = int(m.group(1))
         try:
-            r = requests.post(f"{API_URL}/api/products/{product_id}/restore", timeout=15)
+            r = api.post(f"{API_URL}/api/products/{product_id}/restore", timeout=15)
             if r.status_code == 200:
                 return f"Produk #{product_id} dikembalikan ke daftar."
             return f"Produk #{product_id} tidak ditemukan."
@@ -197,7 +206,7 @@ def handle_message(chat_id, text):
 
     if cmd == "/export":
         try:
-            r = requests.get(f"{API_URL}/api/products/export/json", timeout=15)
+            r = api.get(f"{API_URL}/api/products/export/json", timeout=15)
             if r.status_code == 200:
                 with open("products_export.json", "w", encoding="utf-8") as f:
                     f.write(r.text)
@@ -209,7 +218,7 @@ def handle_message(chat_id, text):
 
     if cmd == "/ping":
         try:
-            r = requests.get(f"{API_URL}/health", timeout=10)
+            r = api.get(f"{API_URL}/health", timeout=10)
             if r.status_code == 200:
                 body = r.json()
                 return f"Backend OK (status={body.get('status')}, db={body.get('database')})."
@@ -219,7 +228,7 @@ def handle_message(chat_id, text):
 
     if cmd == "/version":
         try:
-            r = requests.get(f"{API_URL}/api/version", timeout=10)
+            r = api.get(f"{API_URL}/api/version", timeout=10)
             if r.status_code == 200:
                 body = r.json()
                 return f"PriceDrop Tracker API v{body.get('version')} (api v{body.get('api_version')})"
@@ -233,7 +242,7 @@ def handle_message(chat_id, text):
             return "Contoh: /untrack 3"
         product_id = int(m.group(1))
         try:
-            r = requests.delete(f"{API_URL}/api/products/{product_id}", timeout=15)
+            r = api.delete(f"{API_URL}/api/products/{product_id}", timeout=15)
             if r.status_code == 200:
                 return f"Produk #{product_id} dihapus dari pantauan."
             return f"Produk #{product_id} tidak ditemukan."
@@ -278,8 +287,7 @@ def handle_message(chat_id, text):
         m = re.match(r"(\d+)", arg)
         days = int(m.group(1)) if m else 90
         try:
-            r = requests.post(
-                f"{API_URL}/api/products/prune?older_than_days={days}", timeout=15
+            r = api.post(f"{API_URL}/api/products/prune?older_than_days={days}", timeout=15
             )
             if r.status_code == 200:
                 return f"Riwayat lebih dari {days} hari dibersihkan ({r.json()['deleted_points']} titik)."
@@ -293,7 +301,7 @@ def handle_message(chat_id, text):
             return "Contoh: /archive 3"
         product_id = int(m.group(1))
         try:
-            r = requests.post(f"{API_URL}/api/products/{product_id}/archive", timeout=15)
+            r = api.post(f"{API_URL}/api/products/{product_id}/archive", timeout=15)
             if r.status_code == 200:
                 return f"Produk #{product_id} diarsipkan (tidak muncul di daftar)."
             return f"Produk #{product_id} tidak ditemukan."
