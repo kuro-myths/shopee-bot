@@ -69,6 +69,20 @@ def main():
         return 1
     print(f"/health OK: {info}")
 
+    # Dashboard harus bisa dibuka (HTML), bukan 404 JSON.
+    try:
+        req = urllib.request.Request(f"{base}/dashboard/", headers={"Accept": "text/html"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read(4096).decode("utf-8", "ignore")
+        if "<html" not in html.lower():
+            raise ValueError("respons bukan HTML")
+        print("/dashboard/ OK")
+    except Exception as exc:
+        msg = f"/dashboard/ tidak bisa dibuka ({exc}). Pastikan Dockerfile menyalin folder web/."
+        print(f"::error title=Dashboard::{msg}")
+        summary(["## Deploy bermasalah", msg])
+        return 1
+
     headers = {"X-API-Key": a.api_key} if a.api_key else {}
     try:
         _, diag = get(f"{base}/api/diagnostics", headers)

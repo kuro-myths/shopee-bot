@@ -57,6 +57,13 @@ def _database_checks():
 def run_checks() -> dict:
     checks = _database_checks()
 
+    from .. import main as _main  # import lambat: hindari siklus saat modul dimuat
+    if _main._dashboard_dir:
+        checks.append(_check("dashboard", "Dashboard", "ok", f"File dashboard ditemukan ({_main._dashboard_dir})."))
+    else:
+        checks.append(_check("dashboard", "Dashboard", "error", "Folder dashboard (web/) tidak ada di server, /dashboard akan 404.",
+                             "Pastikan Dockerfile memuat 'COPY web/ ./web/', lalu deploy ulang."))
+
     if settings.api_key:
         checks.append(_check("api_key", "Autentikasi API", "ok", "API_KEY aktif; endpoint /api dilindungi."))
     else:

@@ -167,3 +167,25 @@ def test_root_redirects_browser_to_dashboard(client, monkeypatch):
     assert r2.status_code == 307
     page = client.get("/", headers={"Accept": "text/html"}, follow_redirects=True)
     assert page.status_code == 200 and "PriceDrop" in page.text
+
+
+def test_dashboard_check_ok_in_repo_layout():
+    assert _by_id(diagnostics.run_checks())["dashboard"]["status"] == "ok"
+
+
+def test_dashboard_missing_is_an_error(monkeypatch):
+    from app import main as m
+
+    monkeypatch.setattr(m, "_dashboard_dir", None)
+    c = _by_id(diagnostics.run_checks())["dashboard"]
+    assert c["status"] == "error" and "COPY web/" in c["fix"]
+
+
+def test_find_dashboard_dir_env_override_and_docker_layout(tmp_path, monkeypatch):
+    from app import main as m
+
+    (tmp_path / "index.html").write_text("<html></html>")
+    monkeypatch.setenv("DASHBOARD_DIR", str(tmp_path))
+    assert m.find_dashboard_dir() == tmp_path
+    monkeypatch.setenv("DASHBOARD_DIR", str(tmp_path / "tidak-ada"))
+    assert m.find_dashboard_dir() is not None  # jatuh ke layout repo

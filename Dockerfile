@@ -6,6 +6,8 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
+# Dashboard statis disajikan backend di /dashboard (dicari di /app/web)
+COPY web/ ./web/
 
 ENV CHECKER_ENABLED=true \
     DATABASE_URL=sqlite:////data/pricedrop.db \

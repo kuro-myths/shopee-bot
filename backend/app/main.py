@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import logging
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -133,6 +134,22 @@ app.include_router(products.router)
 app.include_router(stats.router)
 
 # Web dashboard (served at /dashboard)
-_dashboard_dir = Path(__file__).resolve().parent.parent.parent / "web"
-if _dashboard_dir.exists():
+def find_dashboard_dir():
+    """Cari folder dashboard: DASHBOARD_DIR, lalu layout repo (../../web), lalu layout Docker (/app/web)."""
+    here = Path(__file__).resolve()
+    candidates = [
+        Path(os.environ["DASHBOARD_DIR"]) if os.environ.get("DASHBOARD_DIR") else None,
+        here.parent.parent.parent / "web",  # repo: backend/app/main.py -> <repo>/web
+        here.parent.parent / "web",         # docker: /app/app/main.py -> /app/web
+    ]
+    for c in candidates:
+        if c and (c / "index.html").is_file():
+            return c
+    return None
+
+
+_dashboard_dir = find_dashboard_dir()
+if _dashboard_dir:
     app.mount("/dashboard", StaticFiles(directory=str(_dashboard_dir), html=True), name="dashboard")
+else:
+    logger.warning("Folder dashboard (web/index.html) tidak ditemukan; /dashboard akan 404")
