@@ -1,0 +1,97 @@
+name: Deploy to Railway
+
+# Setiap push ke main: tes -> deploy ke Railway -> smoke test + diagnostik.
+# Jika ada error (build gagal, server tidak sehat, diagnostik "error"),
+# workflow ditandai gagal, anotasi error muncul di ringkasan run, dan log
+# Railway dicetak otomatis.
+#
+# Setup satu kali (Settings -> Secrets and variables -> Actions):
+#   Secret   RAILWAY_TOKEN   Project Token (Railway -> Project -> Settings -> Tokens)
+#   Secret   APP_API_KEY     (opsional) sama dengan variable API_KEY di Railway
+#   Variable RAILWAY_SERVICE (opsional) nama service di Railway, default: shopee-bot
+#   Variable RAILWAY_URL     (opsional) mis. https://xxx.up.railway.app; jika kosong dicari otomatis
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-railway
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt -r bot/requirements.txt
+      - name: Backend tests
+        run: cd backend && python -m pytest tests/ -q
+        env:
+          CHECKER_ENABLED: "false"
+      - name: Bot tests
+        run: cd bot && python -m pytest test_commands.py test_state.py -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Dashboard syntax check
+        run: node --check web/api.js && node --check web/app.js
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE || 'shopee-bot' }}
+      RAILWAY_URL: ${{ vars.RAILWAY_URL }}
+      APP_API_KEY: ${{ secrets.APP_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pastikan secret RAILWAY_TOKEN ada
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error title=RAILWAY_TOKEN belum diisi::Buat Project Token di Railway (Project -> Settings -> Tokens), lalu simpan sebagai secret RAILWAY_TOKEN di GitHub."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy (build + release)
+        run: railway up --ci --service "$RAILWAY_SERVICE"
+
+      - name: Tentukan URL aplikasi
+        id: url
+        run: |
+          URL="$RAILWAY_URL"
+          if [ -z "$URL" ]; then
+            URL=$(railway domain --service "$RAILWAY_SERVICE" 2>/dev/null | grep -Eo 'https://[A-Za-z0-9./_-]+' | head -1 || true)
+          fi
+          if [ -z "$URL" ]; then
+            echo "::error title=URL tidak ditemukan::Generate domain di Railway (Settings -> Networking), lalu simpan sebagai variable RAILWAY_URL di GitHub."
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "URL aplikasi: $URL"
+
+      - name: Smoke test + diagnostik
+        run: python scripts/check_deploy.py --url "${{ steps.url.outputs.url }}" --api-key "$APP_API_KEY" --timeout 300
+
+      - name: Log Railway (saat gagal)
+        if: failure()
+        run: |
+          echo "---- 150 baris log Railway terakhir ----"
+          timeout 45 railway logs --service "$RAILWAY_SERVICE" 2>&1 | tail -n 150 || true

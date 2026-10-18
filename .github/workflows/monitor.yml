@@ -1,0 +1,23 @@
+name: Monitor Railway
+
+# Cek kesehatan aplikasi tiap 30 menit. Jika gagal, GitHub mengirim
+# notifikasi "workflow failed" ke email Anda.
+# Butuh Variable RAILWAY_URL (dan Secret APP_API_KEY jika API_KEY dipakai).
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    if: ${{ vars.RAILWAY_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cek /health dan diagnostik
+        run: python scripts/check_deploy.py --url "${{ vars.RAILWAY_URL }}" --api-key "${{ secrets.APP_API_KEY }}" --timeout 60
