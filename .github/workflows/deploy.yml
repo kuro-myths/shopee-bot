@@ -45,8 +45,29 @@ jobs:
       - name: Dashboard syntax check
         run: node --check web/api.js && node --check web/app.js
 
+  config:
+    # Deploy hanya jalan jika RAILWAY_TOKEN sudah diisi. Jika belum, run tetap
+    # hijau dengan peringatan (bukan merah) sampai setup selesai.
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.check.outputs.has_token }}
+    steps:
+      - id: check
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Deploy dilewati::Secret RAILWAY_TOKEN belum diisi. Buat Project Token di Railway (Project -> Settings -> Tokens), simpan di GitHub (Settings -> Secrets and variables -> Actions), lalu jalankan ulang workflow ini."
+            echo "### Deploy dilewati" >> "$GITHUB_STEP_SUMMARY"
+            echo "Secret \`RAILWAY_TOKEN\` belum diisi. Lihat DEPLOY-RAILWAY.md bagian 'Deploy otomatis lewat GitHub Actions'." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
-    needs: test
+    needs: [test, config]
+    if: ${{ needs.config.outputs.has_token == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -56,13 +77,6 @@ jobs:
       APP_API_KEY: ${{ secrets.APP_API_KEY }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Pastikan secret RAILWAY_TOKEN ada
-        run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "::error title=RAILWAY_TOKEN belum diisi::Buat Project Token di Railway (Project -> Settings -> Tokens), lalu simpan sebagai secret RAILWAY_TOKEN di GitHub."
-            exit 1
-          fi
 
       - uses: actions/setup-node@v4
         with:
